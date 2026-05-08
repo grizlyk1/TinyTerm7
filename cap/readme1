@@ -1,0 +1,10 @@
+terminfo compiled terminal info
+text terminfo to binary
+	cti2bin
+
+reverse:
+binary to text terminfo (need manual check)
+	cbin2ti
+
+text termcap to text terminfo (need manual check)
+	ccap2ti

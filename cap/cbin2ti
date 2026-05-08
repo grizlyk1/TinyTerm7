@@ -1,0 +1,2 @@
+# compiled bin to text src .ti
+infocmp -T -s d -I -l -1 -a -x -U mx1

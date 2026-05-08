@@ -1,0 +1,192 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDICON_TL1              ICON                    "tinyterm.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDMENU_MAIN MENU
+BEGIN
+    POPUP "&Term"
+    BEGIN
+        MENUITEM "&Copy",                       IDM_COPY
+        MENUITEM "&Paste",                      IDM_PASTE
+        MENUITEM "select &All",                 IDM_SELALL
+        MENUITEM SEPARATOR
+        MENUITEM "&Repaint screen",             IDM_REPAINT
+        MENUITEM SEPARATOR
+        MENUITEM "s&elect Rbuf",                IDM_SELBUF
+		MENUITEM "&Keyb XON",                 	IDM_KEYBXON
+        MENUITEM "Lo&gging...",                 IDM_LOGG
+        MENUITEM SEPARATOR
+        POPUP "&Mice mode"
+        BEGIN
+			MENUITEM "M&0 (dis)",           		IDM_M0
+			MENUITEM "M&1",           				IDM_M1
+			MENUITEM "M&2",           				IDM_M2
+			MENUITEM "M&3 (all)",           		IDM_M3
+			MENUITEM SEPARATOR
+			MENUITEM "mice &xterm",            		IDM_MICE_XTERM
+        END
+        POPUP "Op&tions"
+        BEGIN
+			MENUITEM "cursor by &BS",               IDM_CURSOR_BS
+			MENUITEM "CAN by &ESC",            		IDM_ESC_DO_CAN
+			MENUITEM SEPARATOR
+			MENUITEM "&Hide ESCs",                 	IDM_HIDE_ESC
+        	MENUITEM "Lo&g ESCs...",                IDM_LOG_ESC
+			MENUITEM SEPARATOR
+			MENUITEM "&Wrap mode",             		IDM_WRAP
+        END
+        POPUP "C&harset"
+        BEGIN
+			MENUITEM "&Display UTF8",               IDM_DISP_UTF8
+			MENUITEM "Display &OEM",                IDM_DISP_OEM
+			MENUITEM "Display &ANSI",               IDM_DISP_ANSI
+			MENUITEM SEPARATOR
+			MENUITEM "&Keyb UTF8",               	IDM_KEYB_UTF8
+        END
+        POPUP "C&onfig"
+        BEGIN
+			MENUITEM "C&opy caption",               IDM_CP_TITLE
+			MENUITEM "C&lear Rbuf",                 IDM_DELBUF
+			MENUITEM "Reset &term",                	IDM_RESET_TERM
+        	MENUITEM SEPARATOR
+            MENUITEM "&Font...",                    IDM_FONT
+            MENUITEM "S&ize...",                    IDM_SIZE
+            MENUITEM "L&oad config",                IDM_LOADCFG
+        	MENUITEM SEPARATOR
+            MENUITEM "Sa&ve config",                IDM_SAVECFG
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "&New window",                 IDM_NEWWIN
+        MENUITEM "A&bout TinyTerm7",            IDM_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SIZE DIALOGEX 0, 0, 150, 100
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "TinyTerm7 window size"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    COMBOBOX        IDM_LXY,53,10,70,36,CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | CBS_HASSTRINGS | WS_TABSTOP
+    RTEXT           "Preset:",IDM_STATIC,9,12,38,12
+    COMBOBOX        IDM_LX,53,30,70,12,CBS_SIMPLE | CBS_HASSTRINGS | WS_TABSTOP
+    RTEXT           "LX (80):",IDM_STATIC,9,32,38,12
+    COMBOBOX        IDM_LY,53,50,70,12,CBS_SIMPLE | CBS_HASSTRINGS | WS_TABSTOP
+    RTEXT           "LY (25):",IDM_STATIC,9,52,38,12
+    DEFPUSHBUTTON   "OK",IDOK,20,75,50,16
+    PUSHBUTTON      "Cancel",IDCANCEL,80,75,50,16
+END
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 230, 65
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About TinyTerm7"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDICON_TL1,IDM_STATIC,14,14,32,32
+    LTEXT           "TinyTerm7, ver 0.2, 2026",IDM_STATIC,40,14,110,8,SS_NOPREFIX
+    LTEXT           "The 'TinyTerm7' is free software, under GNU GPL",IDM_STATIC,40,26,160,8
+    DEFPUSHBUTTON   "OK",IDOK,150,42,50,14,WS_GROUP
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_SIZE, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

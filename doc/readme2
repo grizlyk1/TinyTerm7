@@ -1,0 +1,46 @@
+brief about tinyterm7
+
+	note, the tool tinyterm7 is only intended to provide network connection 
+	to original "minix 3 book" image running in remote virtual environment
+	with minix VGA console look and feel
+
+	as minix around, tinyterm7 also is trying to deal with minimal balanced preset 
+	of termcap strings, there are no extra termcap features supported
+
+	tinyterm7 a little extends minix VGA console with rollback buf, alt screen and mouse, 
+	so other apps can also run in tinyterm7 with colors and mouse, 
+	but tinyterm7 is not going to be xterm terminal, check your apps to agree with 
+	tinyterm7 if you want to work in tinyterm7 better
+		
+		there are differences with xterm, for example work of mouse modes Mx or alt screen; 
+		tinyterm7 does not switch to alt screen, but similar to save cursor_pos 
+		do internal copy of { screen, cursor and color attr }, so you can join own data
+		with current screen (partially draw own files panel for example) 
+		and later anytime can restore backround from saved screen copy (remove 
+		own panels from screen) 
+
+	from app point of view, tinyterm7 is contolled by set of tty commands
+	termcap and terminfo are sources of tinyterm7 tty commands
+		mx1.cap
+		mx1.ti
+	compile terminfo binary by "tic -a -x -N -T -U -r mx1.ti"
+	set terminal name by "export TERM=mx1"
+
+other differences
+	'ctlr+letter' control code mapped to ctlr+shift+letter key area, 
+	ut us possible to use ctrl+c and ctrl+v as in GUI
+
+	esc key mapped to CAN (^X), use ctlr+shift+[ or ESC+key to get ESC, 
+	it is assumed you will learn apps to read ^X instead of looking for ESC in keyboard
+
+	because of Windows keyboard default behaviour, alt+ is not set for 9_keys_of_keypad 
+	in favor of alt+digit composed codes, that is not a problem in GUI point of view
+
+new minix terminal properties
+
+	added "clear in line", some easy set/reset modes 
+
+	removed boolean data that now has set/reset strings (boolean data used only if no set/reset 
+	commands or to specify the commands flavors)
+
+===

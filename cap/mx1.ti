@@ -1,0 +1,98 @@
+#
+mx1|new mx1 console,
+#	the bools shoud be auto-deduced by not emptiness of string: smam/smir/hts; 
+#	or as always true in modern tty: bs 
+#	can autowrap without :xn:, can program tabstop, can insert mode, can bs
+#	am, OTpt, mir, OTbs,
+#(* name) bool can set 16 ANSI color/bk_color as extended xterm
+#	\E[(30-37,39,40-47,49,90-97,100-107)
+		Ac,
+#	num of colors by setaf / setab
+		cols#80, lines#25, it#8, colors#16, 
+		is2=\E[m,
+		smso=\E[7m, rmso=\E[m, 
+		smul=\E[4m, rmul=\E[m,
+		blink=\E[5m, bold=\E[1m, rev=\E[7m, sgr0=\E[m,
+#	(* func) cl=\E[H\E[J
+		el=\E[K, ed=\E[J, clear=\E[4J,
+		ri=\EM, rin=\E[%p1%dT,
+		ind=\n, indn=\E[%p1%dS,
+		il1=\E[L, il=\E[%p1%dL,
+		dl1=\E[M, dl=\E[%p1%dM,
+		ich1=\E[@, ich=\E[%p1%d@,
+		dch1=\E[P, dch=\E[%p1%dP,
+#	clear in line
+		ech1=\E[X, ech=\E[%p1%dX,
+		cup=\E[%i%p1%d;%p2%dH,
+		home=\E[H,
+		cub1=\E[D, cub=\E[%p1%dD,
+		cuf1=\E[C, cuf=\E[%p1%dC,
+		cuu1=\E[A, cuu=\E[%p1%dA,
+		cud1=\E[B, cud=\E[%p1%dB,
+#	do backward tab (\E[Z), clear to default tabstop
+		cbt=\E[9;2~, tbc=\E[3g,
+#	(* func) set all tabstops gap by current cursor_x
+		hts=\EH,
+#
+#(* code)
+#	save/restore cursor
+		sc=\E[7n, rc=\E[8n,
+#	CurPos request / CP report (row,col)
+		u7=\E[6n, u6=\E[%i%p1%d;%p2%dR,
+#	smir/rmir
+		smir=\E[4h, rmir=\E[4l,
+#	smam/rmam
+		smam=\E[7h, rmam=\E[7l,
+#
+#(* name, code)
+#	XOFF2, more protected version of XOFF signal, discard all incoming keyboard/mouse data
+#	this is not xoffc, string
+		XO=\ES,
+#	rmm  mouse tracking off
+		M0=\E[100n,
+#	smm1 mouse tracking on for: pressed_button
+		M1=\E[101n,
+#	smm2 +move_in_pressed_buttons
+		M2=\E[102n,
+#	smm3 +any_move
+		M3=\E[103n,
+#	:Km: kmous, mouse event prefix to answer \e[Mbxy, "button,x,y" in form "number = %c-0x20"
+		kmous=\E[M,
+#ANSI 8 dark + 8 bright colors, set by number 0-15 (:AF: :BF:)
+		setaf=\E[38;5;%p1%dm,
+		setab=\E[48;5;%p1%dm,
+#cursor to title(status) line 0 /from title(status) line
+# ts, print string of desired size, fs; instead of xterm hardcoded \E]0; str \a
+		tsl=\E]0;, fsl=\007,
+#(* code)	quoted print control char 0-31,127 as printable @A-Z[\\]^_? :qc: qcp,
+		dispc=\E^%c, 
+#(* name, code)	save/restore display: screen + cursor_pos + attr into internal terminal buf
+#	:sD:/:rD:
+		sD=\E[47h, rD=\E[47l,
+#	:ti:/:te: smcup/rmcup alternate screen mode, can be partially implemented as :sD:/:rD:
+#	but it is not the same
+		smcup=\E[47h, rmcup=\E[47l,
+#(* code)	set active window %d;%d;%d;%d (top, bottom, left, right) :wi: win,
+#	on success cursor x,y will be set to 0,0 corner of new active window
+#	will be reset to default fullscren on change terminal size etc
+		win=\E[9;%d;%d;%d;%dn,
+#
+#keys
+#	:@2: kcan, ESC key
+		kcan=^X,
+#	:&7: kspd, pause/ctrl+break key
+		kspd=\276,
+#
+		kbs=^H, kdch1=\177, kich1=\E[@,
+		kcub1=\E[D,	kcuf1=\E[C,	kcuu1=\E[A,	kcud1=\E[B,
+		kpp=\E[V, knp=\E[U, khome=\E[H, kend=\E[Y,
+#	keypad in control mode K1-K5
+	    K1=^[[H, K2=^[[V, K3=^[[G, K4=^[[Y, K5=^[[U, 
+#	(* name) K0,K6-K9,K;/K10
+		K0=^[[@, K6=^[[A, K7=^[[D, K8=^[[C, K9=^[[B,
+		K10=\177,
+#	function keys F10, F1-F9 
+	    kf0=\260, kf1=\261, kf2=\262, kf3=\263, kf4=\264,
+    	kf5=\265, kf6=\266, kf7=\267, kf8=\270, kf9=\271,
+#	F11, F12
+    	kf11=\272, kf12=\273,

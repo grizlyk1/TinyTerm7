@@ -1,0 +1,2 @@
+# text src .ti to compiled bin
+tic -a -x -N -T -U -r mx1.ti

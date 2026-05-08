@@ -1,0 +1,2 @@
+# cap to text src .ti
+tic -a -x -N -T -U -r -I -1 mx1.cap
