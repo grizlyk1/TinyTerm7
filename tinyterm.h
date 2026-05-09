@@ -231,13 +231,15 @@ struct TERM {
 									//data stored in memory only for title_idx in range [TITLE_BASE_SZ, TITLE_SZ)
 									//else app display to screen
 
-	//save alt buf, alt clr_attr, alt cursor_x_y
+	//save alt buf, alt clr_attr, alt cursor_x_y, { alt_title, alt_title_idx }
 	enum { ALT_DEF_BUFFER_ITEMS= (DEF_MAX_LY+16)*DEF_MAX_LX };	//total items in save memory buf
 	unsigned alt_buffer_items()const { return (v_max_ly+16) * v_max_lx; }
 
 	tt7_data_t	*alt_data_buf;
 	tt7_attr_t	*alt_attr_buf, alt_clr_attr;
 	unsigned	alt_cursor_x, alt_cursor_y;
+	unsigned	alt_title_idx;
+	tt7_data_t	alt_title[TITLE_SZ+16];
 
 	enum { SEQ_SZ= 64 };			//max seq size in items
 	BOOL bEscape;					//ESC seq parse in progress

@@ -1075,10 +1075,16 @@ LRESULT CALLBACK MainWndProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 		//{ VK_NUM, expansion_method, key_str, { mod_str[7] } }
 		//{ vk_str[8], vk_str_len[8] }
 		unsigned len = tiny_keytable[VK_key].vk_str_len[mod];
-		if(len) term_Send(pt, tiny_keytable[VK_key].vk_str[mod].data(), len); }
+		if(len) term_Send(pt, tiny_keytable[VK_key].vk_str[mod].data(), len); 
 		
 		//SB_BOTTOM
-		term_Scroll(pt,  pt->do_line_diff(pt->line_scroll, pt->line_head)); 
+		switch(VK_key){
+			//pressed mod keys do not scroll to command line
+		case VK_SHIFT: case VK_MENU: case VK_CONTROL: break; 
+		default:
+			//do scroll to command line
+			term_Scroll(pt,  pt->do_line_diff(pt->line_scroll, pt->line_head)); 
+		}}
 		break;
 
 	case WM_SYSKEYDOWN:

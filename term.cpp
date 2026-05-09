@@ -558,6 +558,10 @@ void term_save_display(TERM *pt)
 	pt->alt_cursor_x = pt->cursor_x;
 	pt->alt_cursor_y = pt->cursor_y;
 
+	pt->alt_title_idx = pt->title_idx;
+	if(pt->title_idx) wmemcpy(pt->alt_title, pt->title, pt->title_idx); 
+	pt->alt_title[pt->title_idx]= 0;
+
 	//find first src line
 	unsigned src_line = pt->line_head;
 	//find first dst line
@@ -584,6 +588,10 @@ void term_restore_display(TERM *pt)
 	pt->clr_attr = pt->alt_clr_attr;
 	pt->cursor_x = pt->alt_cursor_x;
 	pt->cursor_y = pt->alt_cursor_y;
+
+	pt->title_idx = pt->alt_title_idx;
+	if(pt->title_idx) wmemcpy(pt->title, pt->alt_title, pt->title_idx); 
+	pt->title[pt->title_idx]= 0;
 
 	//find first src line
 	unsigned src_line = 0;
