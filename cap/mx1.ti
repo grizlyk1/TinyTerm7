@@ -9,7 +9,8 @@ mx1|new mx1 console,
 		Ac,
 #	num of colors by setaf / setab
 		cols#80, lines#25, it#8, colors#16, 
-		is2=\E[m,
+#	(* code) \E[0n partial terminal reset (tuning options are not affected)
+		is2=\E[n,
 		smso=\E[7m, rmso=\E[m, 
 		smul=\E[4m, rmul=\E[m,
 		blink=\E[5m, bold=\E[1m, rev=\E[7m, sgr0=\E[m,

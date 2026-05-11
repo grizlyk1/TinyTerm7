@@ -26,7 +26,6 @@ void term_partial_Reset(TERM *pt)
 	pt->bWrap= TRUE;
 	pt->bKeyb= TRUE;
 
-	pt->mouse_mode= TERM::MOUSE_DIS;
 	pt->bAppMouse= TRUE;
 
 	pt->tab_sz = TERM::DEF_TAB_SZ;
@@ -47,8 +46,6 @@ void term_Clear(TERM *pt)
 
 	pt->bDisScrollBuf = FALSE;
 
-	pt->clr_attr = TERM::DEF_CLR_ATTR;
-
 	//the following options presist on terminal reset
 	pt->bProgTab = FALSE;
 
@@ -60,6 +57,8 @@ void term_Clear(TERM *pt)
 	//pt->bOptDisplayUTF8= TRUE;
 	pt->OptDisplay_mode= TERM::Display_UTF8;
 	pt->bOptKeybUTF8= TRUE;
+
+	pt->mouse_mode= TERM::MOUSE_DIS;
 	pt->bOptMouseXterm= FALSE;
 
 	pt->bOptXOFF2= TRUE;
@@ -1612,6 +1611,9 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 				case L'n':
 					pt->bEscape = FALSE;
 					switch(d_param[0]){
+					case 0:							//:is: partial terminal reset (manual set of tuning options are not affected)
+						term_Reset(pt);
+						return wsz;
 					case 6:{						//:u7: request cursor pos, answer is :u6=\E[y;xR:
 						enum { WBUF_SZ= 32 };
 						WCHAR  wbuf[WBUF_SZ+2]; wbuf[WBUF_SZ]= 0;

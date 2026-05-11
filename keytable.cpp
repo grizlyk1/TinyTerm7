@@ -6,6 +6,11 @@
 #include "keytable.h"
 //using std::vector;
 
+#define KEYMAP_FNAME		(L"TinyTerm7.keymap")
+#define KEYMAP_PATH_ENV		(L"USERPROFILE")
+static WCHAR *keymap_fname= 0;
+enum { KEYMAP_STR_SZ=32 }; //KEYMAP file string field maxsize
+
 /* 
 static config of keyboard
 	how to auto expand init pure key in keytable_init init row
@@ -376,4 +381,121 @@ void init_keytable( t_keytable * _Inout_ keytable )
 	keytable[VK_CLEAR].vk_str_len[KEY_MOD_ALT]= 0; 
 	keytable[VK_INSERT].vk_str_len[KEY_MOD_ALT]= 0; 
 
+	//
+	//create keymap file name
+	{ WCHAR *keymap_path= _wgetenv(KEYMAP_PATH_ENV); //path
+	while(keymap_path){ //if path exist
+		//create full fname
+		enum { STR_SZ = 2*MAX_PATH };
+		WCHAR buf[STR_SZ+16];
+		_snwprintf(buf, STR_SZ, L"%s\\%s", keymap_path, KEYMAP_FNAME); buf[STR_SZ]= 0;
+		keymap_fname = static_cast<WCHAR*>(malloc( (wcslen(buf)+1)*sizeof(WCHAR) ));
+		wcscpy(keymap_fname,buf);
+		break;
+	}}
+
+}
+
+void load_keymap( HWND hwnd, t_keytable _Inout_ *keytable, char is_explicit_load ){
+	assert(keytable);
+
+	if(!keymap_fname){
+		{ MessageBoxA(hwnd,"Can not use keymap file","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+		return; 
+	}
+	
+	FILE *fi = _wfopen(keymap_fname, L"rb"); 
+	if(!fi){
+		if(is_explicit_load){ 
+			MessageBoxA(hwnd,"Can not read keymap file","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ 
+		}
+		return; 
+	}
+
+	//read lines
+	for(;;){
+
+		unsigned key;
+		if( fscanf(fi, " %u", &key) != 1 ) { 
+			if( feof(fi) )break;
+			MessageBoxA(hwnd,"Can not read VK_KEY","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ break; 
+		}
+		if( key > 255 ) { MessageBoxA(hwnd,"VK_KEY > 255","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ break;}
+
+		char buf[KEYMAP_STR_SZ+16];
+
+		for( unsigned mod= 0; mod < KEY_MODS; ++mod)
+		{
+			//key mod: size 
+			unsigned len;
+			if( fscanf(fi, " , %u", &len) != 1 ) { MessageBoxA(hwnd,"Can not read size","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
+
+			keytable[key].vk_str_len[mod] = len;
+			if(!len) continue;
+
+			//key mod: str
+			if( fgetc(fi) != ' '){ MessageBoxA(hwnd,"Can not read str","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
+			for( unsigned i= 0; i < len; ++i){
+				if( feof(fi) ){ MessageBoxA(hwnd,"Can not read str","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
+				buf[i] = fgetc(fi);
+			}
+
+			keytable[key].vk_str[mod].assign( len, 0 );
+			memcpy(keytable[key].vk_str[mod].data(), buf, len );
+		}
+
+		//eol
+		if( fscanf(fi, " %1[;]", buf ) != 1 ) { MessageBoxA(hwnd,"Can not read eol","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ break; }
+	}
+	break_load:
+
+	fclose (fi);
+}
+
+void save_keymap( HWND hwnd, t_keytable const _In_ *keytable ){
+	assert(keytable);
+
+	if(!keymap_fname){
+		{ MessageBoxA(hwnd,"Can not use keymap file","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+		return; 
+	}
+	
+	FILE *fo = _wfopen(keymap_fname, L"wb"); 
+	if(!fo){
+		{ MessageBoxA(hwnd,"Can not write keymap file","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+		return; 
+	}
+
+	for(unsigned key=0; key<VK_KEYS; ++key){ 
+
+		if( keytable[key].is_empty_record() )continue;
+
+		//key:
+		if( fprintf(fo,"%u", key ) <= 0 )
+			{ MessageBoxA(hwnd,"Can not write keymap","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+		
+		char buf[KEYMAP_STR_SZ+16];
+
+		for( unsigned mod= 0; mod < KEY_MODS; ++mod)
+		{
+			//key mod: size 
+			unsigned len = keytable[key].vk_str_len[mod];
+			
+			if( fprintf(fo," , %u", len) <= 0 )
+				{ MessageBoxA(hwnd,"Can not write keymap","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+			if(!len) continue;
+
+			//key mod: str
+			memcpy(buf, keytable[key].vk_str[mod].data(), KEYMAP_STR_SZ); buf[len]=0;
+
+			if( fprintf(fo," %s", buf) <= 0 )
+				{ MessageBoxA(hwnd,"Can not write keymap","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+		}
+
+		//eol
+		if( fprintf(fo," ;\n")<= 0 )
+			{ MessageBoxA(hwnd,"Can not write keymap","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ }
+	}
+
+	fclose(fo);
 }

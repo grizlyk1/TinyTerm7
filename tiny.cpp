@@ -28,7 +28,7 @@ static WCHAR def_lpCmdLine[]= L"";
 
 #define CFG_FNAME			(L"TinyTerm7.cfg")
 #define CFG_PATH_ENV		(L"USERPROFILE")
-static WCHAR *cfg_fname;
+static WCHAR *cfg_fname= 0;
 enum { CFG_STR_SZ=32 }; //CFG file string field maxsize
 
 //if have no round
@@ -736,6 +736,13 @@ BOOL menu_Command( HWND hwnd, WPARAM wParam, LPARAM lParam )
 		save_cfg(hwnd);
 		break;
 
+	case IDM_LOAD_KEYMAP:
+		load_keymap(hwnd, tiny_keytable, IS_EXPLICIT_LOAD);
+		break;
+	case IDM_SAVE_KEYMAP:
+		save_keymap(hwnd, tiny_keytable);
+		break;
+
 	case IDM_NEWWIN: {
 		//run copy of own app
 		WCHAR szPath[MAX_PATH];
@@ -1313,7 +1320,8 @@ static unsigned __stdcall
 		#endif
 
 		buf[rlen]= 0;
-		term_Parse(pt, buf, strlen(buf));
+		//term_Parse(pt, buf, strlen(buf));
+		term_Parse(pt, buf, rlen);
 	}
 
 	return 0;
@@ -1412,7 +1420,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	while(cfg_path){ //if path exist
 		//create full fname
 		enum { STR_SZ = 2*MAX_PATH };
-		WCHAR buf[STR_SZ+1];
+		WCHAR buf[STR_SZ+16];
 		_snwprintf(buf, STR_SZ, L"%s\\%s", cfg_path, CFG_FNAME); buf[STR_SZ]= 0;
 		cfg_fname = static_cast<WCHAR*>(malloc( (wcslen(buf)+1)*sizeof(WCHAR) ));
 		wcscpy(cfg_fname,buf);
@@ -1476,6 +1484,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 	//load config file
 	if(!bDefCfg)load_cfg(hwndTerm, IS_DEFAULT_LOAD);
+	if(!bDefCfg)load_keymap(hwndTerm, tiny_keytable, IS_DEFAULT_LOAD);
 	tiny_wnd_Size();
 
 	//first time reset scrollbar by lines==0

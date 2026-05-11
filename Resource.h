@@ -27,6 +27,8 @@
 #define IDM_DISP_OEM					101
 #define IDM_DISP_ANSI					102
 #define IDM_KEYB_UTF8					103
+#define IDM_LOAD_KEYMAP					104
+#define IDM_SAVE_KEYMAP					105
 #define IDM_M0							110
 #define IDM_M1							111
 #define IDM_M2							112

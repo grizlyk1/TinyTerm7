@@ -1,0 +1,25 @@
+.
+110526
+	read_PTY_pipe:
+	replace strlen(buf) to rlen, allow incoming codes \0 to be parsed
+
+	.
+	terminal reset properties changed, new CAP :is: code to reset terminal 
+
+	.
+	save_keymap to file "%USERPROFILE%\\TinyTerm7.keymap"
+	all lines of current keymap will be stored
+
+	load keymap from file "%USERPROFILE%\\TinyTerm7.keymap"
+	found lines will be added to current keymap
+
+	TinyTerm7.keymap line format 
+	" VK_KEY { \, size (size?str:'') }[KEY_MODS] \;\n"
+	    "VK_KEY" unsigned in range 0-255
+	    "size" unsigned in range 0-32 (strlen(str))
+	    	check is only single space between size and str records
+		(optional) "str" in binary form [size] chars 
+
+	TinyTerm7.keymap is autoloaded the same as TinyTerm7.cfg
+
+.	

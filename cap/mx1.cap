@@ -9,7 +9,8 @@ mx1|new mx console:\
 		:Ac:\
 #	num of colors :Co: in setaf/setab
 		:co#80:li#25:it#8:Co#16:\
-		:is=\E[m:\
+#	(* code) \E[0n partial terminal reset (tuning options are not affected)
+		:is=\E[n:\
 		:so=\E[7m:se=\E[m:\
 		:us=\E[4m:ue=\E[m:\
 		:mb=\E[5m:md=\E[1m:mr=\E[7m:me=\E[m:\
