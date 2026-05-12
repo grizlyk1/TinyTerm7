@@ -215,6 +215,7 @@ struct TERM {
 								//	codepage for 0xA0-0xFF can be properly installed in host Windows
 								//	display output is never affected by the option 
 								//	the option is intended to easy change existed not UTF8 windows text files in range [0xA0-0xFF])
+								//	keyb send chars in the same codepage that display if OptDisplay_mode is not UTF8 (always CP_ACP except CP_OEMCP)
 	BOOL bOptMouseXterm;		//more xterm compatible mouse for xterm apps runnig under TT7
 
 	BOOL bOptXOFF2;				//use instead of keyb as XOFF new escaped XOFF2 code :XO=\ES:, else old single byte ascii code 0x13 (^S)

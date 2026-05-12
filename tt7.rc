@@ -78,6 +78,7 @@ BEGIN
 			MENUITEM "Display &ANSI",               IDM_DISP_ANSI
 			MENUITEM SEPARATOR
 			MENUITEM "&Keyb UTF8",               	IDM_KEYB_UTF8
+        	MENUITEM SEPARATOR
             MENUITEM "L&oad keymap",                IDM_LOAD_KEYMAP
         	MENUITEM SEPARATOR
             MENUITEM "Sa&ve keymap",                IDM_SAVE_KEYMAP

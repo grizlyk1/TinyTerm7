@@ -8,7 +8,7 @@
 
 #define KEYMAP_FNAME		(L"TinyTerm7.keymap")
 #define KEYMAP_PATH_ENV		(L"USERPROFILE")
-static WCHAR *keymap_fname= 0;
+static WCHAR *keymap_fname;
 enum { KEYMAP_STR_SZ=32 }; //KEYMAP file string field maxsize
 
 /* 
@@ -384,16 +384,15 @@ void init_keytable( t_keytable * _Inout_ keytable )
 	//
 	//create keymap file name
 	{ WCHAR *keymap_path= _wgetenv(KEYMAP_PATH_ENV); //path
-	while(keymap_path){ //if path exist
+	if(!keymap_path) keymap_fname = 0; //if path not exist
+	else{
 		//create full fname
 		enum { STR_SZ = 2*MAX_PATH };
 		WCHAR buf[STR_SZ+16];
 		_snwprintf(buf, STR_SZ, L"%s\\%s", keymap_path, KEYMAP_FNAME); buf[STR_SZ]= 0;
 		keymap_fname = static_cast<WCHAR*>(malloc( (wcslen(buf)+1)*sizeof(WCHAR) ));
 		wcscpy(keymap_fname,buf);
-		break;
 	}}
-
 }
 
 void load_keymap( HWND hwnd, t_keytable _Inout_ *keytable, char is_explicit_load ){
@@ -424,7 +423,7 @@ void load_keymap( HWND hwnd, t_keytable _Inout_ *keytable, char is_explicit_load
 
 		char buf[KEYMAP_STR_SZ+16];
 
-		for( unsigned mod= 0; mod < KEY_MODS; ++mod)
+		for( unsigned mod= 0; mod < KEY_MODS; ++mod )
 		{
 			//key mod: size 
 			unsigned len;
@@ -433,11 +432,14 @@ void load_keymap( HWND hwnd, t_keytable _Inout_ *keytable, char is_explicit_load
 			keytable[key].vk_str_len[mod] = len;
 			if(!len) continue;
 
-			//key mod: str
-			if( fgetc(fi) != ' '){ MessageBoxA(hwnd,"Can not read str","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
-			for( unsigned i= 0; i < len; ++i){
-				if( feof(fi) ){ MessageBoxA(hwnd,"Can not read str","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
-				buf[i] = fgetc(fi);
+			//key mod: ' 'str
+			//if( fscanf(fi, "%*1[ ]%?c", len, buf ) != 1 ) { MessageBoxA(hwnd,"Can not read str","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
+			if( fgetc(fi) != ' ' ){ MessageBoxA(hwnd,"Can not read str1","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
+			//str
+			for( unsigned i= 0; i < len; ++i ){
+				unsigned ch = fgetc(fi);
+				if( ch == EOF ){ MessageBoxA(hwnd,"Can not read str2","Error",MB_OK|MB_ICONERROR); /* exit(-1); */ goto break_load; }
+				buf[i] = static_cast<char>( ch );
 			}
 
 			keytable[key].vk_str[mod].assign( len, 0 );

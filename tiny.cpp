@@ -28,7 +28,7 @@ static WCHAR def_lpCmdLine[]= L"";
 
 #define CFG_FNAME			(L"TinyTerm7.cfg")
 #define CFG_PATH_ENV		(L"USERPROFILE")
-static WCHAR *cfg_fname= 0;
+static WCHAR *cfg_fname;
 enum { CFG_STR_SZ=32 }; //CFG file string field maxsize
 
 //if have no round
@@ -925,9 +925,12 @@ BOOL menu_Command( HWND hwnd, WPARAM wParam, LPARAM lParam )
 	case IDM_PASTE:
 		if ( OpenClipboard(hwnd) ) {
 			HANDLE hglb = GetClipboardData(CF_UNICODETEXT);
-			WCHAR *ptr = static_cast<WCHAR*>( GlobalLock(hglb) );
-			if (ptr != NULL) {
-				int len =  wchar_to_utf8(ptr, -1, NULL, 0);
+			WCHAR *wptr = static_cast<WCHAR*>( GlobalLock(hglb) );
+			if (wptr != NULL) {
+				unsigned wlen = wcslen(wptr);
+				if(wlen)term_PasteW(pt, wptr, wlen);
+				#if 0
+				int len =  wchar_to_utf8(wptr, -1, NULL, 0);
 				char *p = (char *)malloc(len);
 				if ( p!=NULL ) {
 					wchar_to_utf8(ptr, -1, p, len);
@@ -935,6 +938,7 @@ BOOL menu_Command( HWND hwnd, WPARAM wParam, LPARAM lParam )
 					if(len)term_Paste(pt, p, len-1);
 					free(p);
 				}
+				#endif
 				GlobalUnlock(hglb);
 			}
 			CloseClipboard();
@@ -1327,15 +1331,21 @@ static unsigned __stdcall
 	return 0;
 }
 
+//#define USE_GetAsyncKeyState
 LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) 
 {
     if (nCode == HC_ACTION) {
+	//check global hook deal with our window
+	if ( bFocus ){
         KBDLLHOOKSTRUCT *p = (KBDLLHOOKSTRUCT *)lParam;
 
-		//#define COND_SHIFT (GetAsyncKeyState(VK_SHIFT) & 0x8000)
-		//#define COND_CTRL (GetAsyncKeyState(VK_CONTROL) & 0x8000)
-		//#define COND_ALT (GetAsyncKeyState(VK_MENU) & 0x8000)
-		
+		#ifdef USE_GetAsyncKeyState
+		{{
+		#define COND_SHIFT (GetAsyncKeyState(VK_SHIFT) & 0x8000)
+		#define COND_CTRL (GetAsyncKeyState(VK_CONTROL) & 0x8000)
+		#define COND_ALT (GetAsyncKeyState(VK_MENU) & 0x8000)
+
+		#else
 		if( p->vkCode == VK_ESCAPE || p->vkCode == VK_SNAPSHOT ){
 		BYTE	KeyState[256]; //for "shift, ctr, alt" keyb input state
 
@@ -1344,6 +1354,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 		#define COND_SHIFT (KeyState[VK_SHIFT]&0x80U)
 		#define COND_CTRL (KeyState[VK_CONTROL]&0x80U)
 		#define COND_ALT (KeyState[VK_MENU]&0x80U)
+		#endif
 
         // Check Esc is pressed
         if( p->vkCode == VK_ESCAPE )
@@ -1390,7 +1401,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 			}
 			return 1; //Block ctrl+mod+PrntScr
 		}
-    }}}
+    }}}}
 	break_no_hook:
     return CallNextHookEx(hhkLowLevelKybd, nCode, wParam, lParam);
 }
@@ -1417,20 +1428,20 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 	//create config file name
 	{ WCHAR *cfg_path= _wgetenv(CFG_PATH_ENV); //path
-	while(cfg_path){ //if path exist
+	if(!cfg_path) cfg_fname = 0; //if path not exist
+	else{
 		//create full fname
 		enum { STR_SZ = 2*MAX_PATH };
 		WCHAR buf[STR_SZ+16];
 		_snwprintf(buf, STR_SZ, L"%s\\%s", cfg_path, CFG_FNAME); buf[STR_SZ]= 0;
 		cfg_fname = static_cast<WCHAR*>(malloc( (wcslen(buf)+1)*sizeof(WCHAR) ));
 		wcscpy(cfg_fname,buf);
-		break;
 	}}
 	
 	//init keytable
 	init_keytable(tiny_keytable);
 	//GetModuleHandle(NULL),GetCurrentThreadId()
-	hhkLowLevelKybd = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, GetModuleHandle(NULL), 0 ); 
+	hhkLowLevelKybd = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, hInstance, 0 ); 
 	if(!hhkLowLevelKybd){ MessageBoxA(hwndTerm,"Can not SetWindowsHookEx\n not all keys will be allowed","Warning",MB_OK|MB_ICONERROR); }
 
 	////RegisterClass

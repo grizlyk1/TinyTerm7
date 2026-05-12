@@ -361,7 +361,8 @@ void term_setSize(TERM *pt, unsigned lx, unsigned ly)
 	/**/\
 	assert((pt)->ly <= (pt)->screen_ly);\
 	assert((pt)->top_y <= (pt)->screen_ly - (pt)->ly);\
-	unsigned win_y= y + (pt)->top_y;
+	unsigned win_y= y + (pt)->top_y;\
+	unsigned win_ly= (pt)->ly + (pt)->top_y;
 //
 
 //scroll up bottom lines in range [y, pt->ly-1) n times
@@ -417,7 +418,7 @@ void scroll_back_and_clear_lines(TERM *pt, unsigned const y, unsigned n)
 	tune_in_win_params(pt,n,y);
 
 	//find first dst line
-	unsigned dst_line = pt->do_line_index( pt->line_head, win_y + pt->ly - 1);
+	unsigned dst_line = pt->do_line_index( pt->line_head, win_ly - 1);
 	
 	//find first src line
 	unsigned src_line = dst_line;
@@ -1058,7 +1059,10 @@ void term_SendW(TERM *pt, WCHAR *wbuf, unsigned wlen)
 	}else{
 		char def_char= 0x1A; //SUB
 		//CP_ACP (1251), CP_OEMCP (866), etc
-		WideCharToMultiByte(CP_ACP, 0, wbuf, wlen, buf, sz, &def_char, 0);
+		//WideCharToMultiByte(CP_ACP, 0, wbuf, wlen, buf, sz, &def_char, 0);
+		//we input chars in the same codepage that display if OptDisplay_mode is not UTF8 (always CP_ACP except CP_OEMCP)
+		unsigned const cp = (pt->OptDisplay_mode == TERM::Display_OEM? CP_OEMCP: CP_ACP);
+		WideCharToMultiByte(cp, 0, wbuf, wlen, buf, sz, &def_char, 0);
 
 		unsigned len= wlen;
 		if(len)term_Send(pt, buf, len);

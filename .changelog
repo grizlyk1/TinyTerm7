@@ -14,7 +14,7 @@
 	found lines will be added to current keymap
 
 	TinyTerm7.keymap line format 
-	" VK_KEY { \, size (size?str:'') }[KEY_MODS] \;\n"
+	" VK_KEY { \, size \  (size?str:'') }[KEY_MODS] \;\n"
 	    "VK_KEY" unsigned in range 0-255
 	    "size" unsigned in range 0-32 (strlen(str))
 	    	check is only single space between size and str records
@@ -23,3 +23,17 @@
 	TinyTerm7.keymap is autoloaded the same as TinyTerm7.cfg
 
 .	
+
+	fix 'term_insert_lines' fail due to active_window added ( win_y+ly was used instead of win_ly )
+	
+	fix 'LowLevelKeyboardProc' hooked all desktop ( lack if( bFocus) check )
+
+	fix 'clipboard paste' does not follow UTF8/plain8 keyb option 
+
+	better term_SendW, check OEM codepage selected to display option 
+
+	better scanf keymap, use EOF by value:
+		//if( fscanf(fi, "%*1[ ]%?c", len, buf ) != 1 ) 
+
+.
+<<< upper this mark is posted to git

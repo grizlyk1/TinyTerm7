@@ -1,5 +1,5 @@
 #
-mx1|new mx console:\
+mx1|new mx minix 3 console:\
 #	the bools shoud be auto-deduced by not emptiness of string: smam/smir/hts; 
 #	or as always true in modern tty: bs 
 #	can autowrap without :xn:, can program tabstop, can insert mode, can bs
