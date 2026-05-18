@@ -16,14 +16,26 @@ mx1|new mx1 minix 3 console,
 		blink=\E[5m, bold=\E[1m, rev=\E[7m, sgr0=\E[m,
 #	(* func) cl=\E[H\E[J
 		el=\E[K, ed=\E[J, clear=\E[4J,
+#	(* name, code) :EL:
+		els=\E[2;%p1%dK,
 		ri=\EM, rin=\E[%p1%dT,
 		ind=\n, indn=\E[%p1%dS,
 		il1=\E[L, il=\E[%p1%dL,
 		dl1=\E[M, dl=\E[%p1%dM,
+#	(* name, code) set color attibutes for lines :TL:
+#	num of chars; action, action the same as :TC:
+		atrl=\E[%p1%d;%p2%dU,
+#
 		ich1=\E[@, ich=\E[%p1%d@,
 		dch1=\E[P, dch=\E[%p1%dP,
 #	clear in line
 		ech1=\E[X, ech=\E[%p1%dX,
+#	(* name, code) set color attibutes in line :TC:
+#	num of chars; action
+#	action: 0 - reverse exising char attr, 1 - use exising bg attr | fg TERM::clr_attr, 
+#			2 - use exising fg attr | bg TERM::clr_attr, 3 - use TERM::clr_attr
+		atrch=\E[%p1%d;%p2%du,
+#
 		cup=\E[%i%p1%d;%p2%dH,
 		home=\E[H,
 		cub1=\E[D, cub=\E[%p1%dD,
@@ -57,6 +69,8 @@ mx1|new mx1 minix 3 console,
 		M2=\E[102n,
 #	smm3 +any_move
 		M3=\E[103n,
+#	smm4 only buttons and wheel, answer \e[Mb
+		M4=\E[104n,
 #	:Km: kmous, mouse event prefix to answer \e[Mbxy, "button,x,y" in form "number = %c-0x20"
 		kmous=\E[M,
 #ANSI 8 dark + 8 bright colors, set by number 0-15 (:AF: :BF:)

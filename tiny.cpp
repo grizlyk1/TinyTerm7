@@ -790,6 +790,7 @@ BOOL menu_Command( HWND hwnd, WPARAM wParam, LPARAM lParam )
 	case IDM_M1: if(pt->mouse_mode != TERM::MOUSE_MODE_1){ pt->mouse_mode = TERM::MOUSE_MODE_1; term_title_header(pt); } break;
 	case IDM_M2: if(pt->mouse_mode != TERM::MOUSE_MODE_2){ pt->mouse_mode = TERM::MOUSE_MODE_2; term_title_header(pt); } break;
 	case IDM_M3: if(pt->mouse_mode != TERM::MOUSE_MODE_3){ pt->mouse_mode = TERM::MOUSE_MODE_3; term_title_header(pt); } break;
+	case IDM_M4: if(pt->mouse_mode != TERM::MOUSE_MODE_4){ pt->mouse_mode = TERM::MOUSE_MODE_4; term_title_header(pt); } break;
 		//menu_Check( IDM_M0, pt->mouse_mode == TERM::MOUSE_DIS );
 		//menu_Check( IDM_M1, pt->mouse_mode == TERM::MOUSE_MODE_1 );
 		//menu_Check( IDM_M2, pt->mouse_mode == TERM::MOUSE_MODE_2 );
@@ -956,6 +957,12 @@ BOOL menu_Command( HWND hwnd, WPARAM wParam, LPARAM lParam )
 		return FALSE;
 	}
 	return TRUE;
+}
+
+//decide: mouse is linked to tt7 or to app if is_ctrl_pressed
+static BOOL 
+is_mouse_link_to_app( BOOL is_ctrl_pressed ){
+	return (pt->mouse_mode == TERM::MOUSE_MODE_4? is_ctrl_pressed: !is_ctrl_pressed);
 }
 
 //hwnd is hwndTerm
@@ -1157,59 +1164,68 @@ LRESULT CALLBACK MainWndProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	case WM_LBUTTONDBLCLK:
 	case WM_LBUTTONDOWN: 
 		SetCapture(hwnd);
-		if( !pt->bAppMouse || !pt->mouse_mode || (wParam & MK_CONTROL) ){
+		if( !pt->bAppMouse || !pt->mouse_mode || !is_mouse_link_to_app(wParam & MK_CONTROL) ){
 			term_Mouse(pt, TERM::LEFTDOWN, GET_X_LPARAM(lParam)/iFontWidth,
 							(GET_Y_LPARAM(lParam)+2)/iFontHeight);
 		}else{
-			term_send_mouse_event(pt, TERM::MOUSE_BUT_1, 1, 
+			if( pt->mouse_mode != TERM::MOUSE_MODE_4 ){
+				term_send_mouse_event(pt, TERM::MOUSE_BUT_1, 1, 
 							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
-		}
+		}}
 		break;
 	case WM_RBUTTONDBLCLK:
 	case WM_RBUTTONDOWN:
-		if( !pt->bAppMouse || !pt->mouse_mode || (wParam & MK_CONTROL) ){
+		if( !pt->bAppMouse || !pt->mouse_mode || !is_mouse_link_to_app(wParam & MK_CONTROL) ){
 		}else{
-			term_send_mouse_event(pt, TERM::MOUSE_BUT_2, 1, 
+			if( pt->mouse_mode != TERM::MOUSE_MODE_4 ){
+				term_send_mouse_event(pt, TERM::MOUSE_BUT_2, 1, 
 							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
-		}
+		}}
 		break;
 	case WM_MOUSEMOVE:
-		if ( MK_LBUTTON&wParam ) {
-		if( !pt->bAppMouse || !pt->mouse_mode || (wParam & MK_CONTROL) ){
-			term_Mouse(pt, TERM::LEFTDRAG, GET_X_LPARAM(lParam)/iFontWidth,
+		//if mouse for tinyterm
+		if( !pt->bAppMouse || !pt->mouse_mode || !is_mouse_link_to_app(wParam & MK_CONTROL) ) {
+			if ( MK_LBUTTON&wParam ) {
+				term_Mouse(pt, TERM::LEFTDRAG, GET_X_LPARAM(lParam)/iFontWidth,
 							(GET_Y_LPARAM(lParam)+2)/iFontHeight);
-		}
-		else if( pt->mouse_mode > TERM::MOUSE_MODE_1 ){
-			term_send_mouse_event(pt, TERM::MOUSE_MOVE, TERM::MOUSE_BUT_1, 
+			}
+			//else if ( MK_RBUTTON&wParam ) {}	
+			//else {}
+
+		//else mouse to app
+		}else{
+			if ( MK_LBUTTON&wParam ) {
+			if( pt->mouse_mode > TERM::MOUSE_MODE_1 && pt->mouse_mode != TERM::MOUSE_MODE_4 ){
+				term_send_mouse_event(pt, TERM::MOUSE_MOVE, TERM::MOUSE_BUT_1, 
+							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
+			}}
+			else if ( MK_RBUTTON&wParam ) {
+			if( pt->mouse_mode > TERM::MOUSE_MODE_1 && pt->mouse_mode != TERM::MOUSE_MODE_4 ){
+				term_send_mouse_event(pt, TERM::MOUSE_MOVE, TERM::MOUSE_BUT_2, 
+							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
+			}}
+			else if( pt->mouse_mode == TERM::MOUSE_MODE_3 ){
+				term_send_mouse_event(pt, TERM::MOUSE_MOVE, TERM::MOUSE_BUT_NO, 
 							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
 		}}
-		else if ( MK_RBUTTON&wParam ) {
-		if( pt->mouse_mode > TERM::MOUSE_MODE_1 ){
-			term_send_mouse_event(pt, TERM::MOUSE_MOVE, TERM::MOUSE_BUT_2, 
-							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
-		}}
-		else if( pt->mouse_mode == TERM::MOUSE_MODE_3 ){
-			term_send_mouse_event(pt, TERM::MOUSE_MOVE, TERM::MOUSE_BUT_NO, 
-							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
-		}
 		break;
 	case WM_LBUTTONUP:
 		ReleaseCapture();
-		if( !pt->bAppMouse || !pt->mouse_mode || (wParam & MK_CONTROL) ){
+		if( !pt->bAppMouse || !pt->mouse_mode || !is_mouse_link_to_app(wParam & MK_CONTROL) ){
 			term_Mouse(pt, TERM::LEFTUP, GET_X_LPARAM(lParam)/iFontWidth,
-							(GET_Y_LPARAM(lParam)+2)/iFontHeight);
+							(GET_Y_LPARAM(lParam)+2)/iFontHeight );
 		}else{
 			term_send_mouse_event(pt, TERM::MOUSE_BUT_1, 0, 
-					GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
+							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
 		}
 		break;
 	case WM_RBUTTONUP:
 		//menu_popup if mouse for tinyterm
-		if( !pt->bAppMouse || !pt->mouse_mode || (wParam & MK_CONTROL) ) return DefWindowProc(hwnd,msg,wParam,lParam);
+		if( !pt->bAppMouse || !pt->mouse_mode || !is_mouse_link_to_app(wParam & MK_CONTROL) ) return DefWindowProc(hwnd,msg,wParam,lParam);
 		//send mouse to app
 		else{ 
 			term_send_mouse_event(pt, TERM::MOUSE_BUT_2, 0, 
-					GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
+							GET_X_LPARAM(lParam)/iFontWidth, (GET_Y_LPARAM(lParam)+2)/iFontHeight );
 		}
 		break;
 	case WM_CONTEXTMENU:
@@ -1230,13 +1246,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 		menu_Check( IDM_M1, pt->mouse_mode == TERM::MOUSE_MODE_1 );
 		menu_Check( IDM_M2, pt->mouse_mode == TERM::MOUSE_MODE_2 );
 		menu_Check( IDM_M3, pt->mouse_mode == TERM::MOUSE_MODE_3 );
+		menu_Check( IDM_M4, pt->mouse_mode == TERM::MOUSE_MODE_4 );
 		menu_Check( IDM_MICE_XTERM, pt->bOptMouseXterm );
 		menu_Check( IDM_LOGG, pt->bLogging );
 		menu_Check( IDM_CURSOR_BS, pt->bOptCursorBS );
 		menu_Check( IDM_ESC_DO_CAN, pt->bOptESC_do_CAN);
 		menu_Check( IDM_HIDE_ESC, pt->bOptHideEsc );
 		menu_Check( IDM_LOG_ESC, pt->bLogEsc );
-		//menu_Check( IDM_DISP_UTF8, pt->bOptDisplayUTF8 );
 		menu_Check( IDM_DISP_UTF8, pt->OptDisplay_mode == TERM::Display_UTF8 );
 		menu_Check( IDM_DISP_OEM,  pt->OptDisplay_mode == TERM::Display_OEM );
 		menu_Check( IDM_DISP_ANSI, pt->OptDisplay_mode == TERM::Display_ANSI );

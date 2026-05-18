@@ -58,6 +58,7 @@ BEGIN
 			MENUITEM "M&1",           				IDM_M1
 			MENUITEM "M&2",           				IDM_M2
 			MENUITEM "M&3 (all)",           		IDM_M3
+			MENUITEM "M&4 (:wheel:)",      			IDM_M4
 			MENUITEM SEPARATOR
 			MENUITEM "mice &xterm",            		IDM_MICE_XTERM
         END
@@ -87,6 +88,7 @@ BEGIN
         BEGIN
 			MENUITEM "C&opy caption",               IDM_CP_TITLE
 			MENUITEM "C&lear Rbuf",                 IDM_DELBUF
+			MENUITEM SEPARATOR
 			MENUITEM "Reset &term",                	IDM_RESET_TERM
         	MENUITEM SEPARATOR
             MENUITEM "&Font...",                    IDM_FONT

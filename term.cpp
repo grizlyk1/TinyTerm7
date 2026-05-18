@@ -267,6 +267,7 @@ void insert_in_line(
 }
 //line is logical line as if active window is left upper corner of screen
 //max_lx should be pt->lx for active window
+//optional str[lx]
 void print_in_line(
 	TERM *pt, unsigned line, unsigned x, unsigned lx, TERM::tt7_attr_t clr_attr, unsigned max_lx, 
 	const TERM::tt7_data_t * _In_opt_ str
@@ -280,6 +281,50 @@ void print_in_line(
 	if(str) wcsncpy(pt->data_buf + idx, str, lx);
 	else wmemset(pt->data_buf + idx, L' ', lx);
 	wmemset(pt->attr_buf + idx, clr_attr, lx);
+}
+//line is logical line as if active window is left upper corner of screen
+//max_lx should be pt->lx for active window
+//action:	
+//	0 - reverse exising char attr 
+//	1 - use exising bg attr | fg clr_attr 
+//	2 - use exising fg attr | bg clr_attr 
+//	3 - use clr_attr
+void set_attr_in_line(
+	TERM *pt, unsigned line, unsigned x, unsigned lx, unsigned action, TERM::tt7_attr_t clr_attr, unsigned max_lx
+	){
+	
+	tune_in_line_params(pt,line,x,lx,max_lx);
+	tune_in_line_params_win(pt,line,x,lx,max_lx);
+
+	unsigned			idx = line_win*pt->max_lx() + win_x;
+	TERM::tt7_attr_t	*wp= pt->attr_buf + idx;
+				
+	switch(action){
+		case 0: //reverse exising char attr 
+			for( unsigned dx=0; dx<lx; ++dx ){ 
+				unsigned hi = (wp[dx] & 0x00FU) << 4; 
+				unsigned lo = (wp[dx] >> 4) & 0x00FU; 
+				wp[dx] = static_cast<TERM::tt7_attr_t>(hi|lo); 
+			}
+			break;
+		case 1: //use exising bg attr | fg clr_attr
+			for( unsigned dx=0; dx<lx; ++dx ){ 
+				unsigned hi = (wp[dx] & 0x0F0U); 
+				unsigned lo = (clr_attr) & 0x00FU; 
+				wp[dx] = static_cast<TERM::tt7_attr_t>(hi|lo); 
+			}
+			break;
+		case 2: //use exising fg attr | bg clr_attr
+			for( unsigned dx=0; dx<lx; ++dx ){ 
+				unsigned hi = (clr_attr & 0x0F0U); 
+				unsigned lo = (wp[dx]) & 0x00FU; 
+				wp[dx] = static_cast<TERM::tt7_attr_t>(hi|lo); 
+			}
+			break;
+		case 3: //use clr_attr
+		default:
+			wmemset(pt->attr_buf + idx, clr_attr, lx);
+	}
 }
 
 void term_setSize(TERM *pt, unsigned lx, unsigned ly)
@@ -472,6 +517,24 @@ void term_clear_lines(TERM *pt, unsigned const from_y, unsigned ly, TERM::tt7_at
 
 		clr_line= pt->do_line_add1(clr_line);
 	}
+}
+
+//set_attr n lines at y in range [y, y+n)
+//y is logical line inside active window
+void term_set_attr_lines(TERM *pt, unsigned const from_y, unsigned ly, unsigned action, TERM::tt7_attr_t clr_attr)
+{
+	tune_in_win_params(pt,ly,from_y);
+
+	//find first attr line
+	unsigned line= pt->do_line_index( pt->line_head, pt->cursor_y );
+
+	for( unsigned dy= ly; dy; --dy )
+	{ 
+		//call 'set_attr_in_line' because need per char access for actions
+		set_attr_in_line(pt, line, 0, pt->lx, action, pt->clr_attr, pt->lx); 
+
+		line= pt->do_line_add1(line); 
+	} 
 }
 
 //move top line into scroll roll buf
@@ -966,9 +1029,9 @@ void term_send_mouse_event(TERM *pt, unsigned evt, int evt_state, unsigned x, un
 	//'bxy' chars 'xy' = 0x20+number+1
 	enum { IDX_BUT=3, IDX_X, IDX_Y, MSG_SZ };
 	char buf[MSG_SZ*2+1]= { 
-		//TT7-compatible single, len=MSG_SZ to send
-		27, '[', 'M', 0x23U, x + 0x21U, y + 0x21U, 
-		//xterm-compatible pair, len=2*MSG_SZ to send
+		//TT7-compatible single, buf[0] to send len=MSG_SZ
+		27, '[', 'M', 0x24U, x + 0x21U, y + 0x21U, 
+		//xterm-compatible single, buf[MSG_SZ] to send len=MSG_SZ
 		27, '[', 'M', 0x23U, x + 0x21U, y + 0x21U, 0 };
 	unsigned msg_len= MSG_SZ;
 
@@ -976,35 +1039,39 @@ void term_send_mouse_event(TERM *pt, unsigned evt, int evt_state, unsigned x, un
 		//evt_state value 1 if pressed; 
 	case TERM::MOUSE_BUT_1:	
 			if(evt_state){ 
-				buf[IDX_BUT]=0x00U + 0x20U; 
-				buf[MSG_SZ]= 0; // no pair
+				buf[IDX_BUT]=0x00U + 0x21U; 
+				buf[MSG_SZ+IDX_BUT]= 0x00U + 0x20U;
+				msg_len= 2*MSG_SZ; // pair
 			}else { 
-				buf[IDX_BUT]=0x00U + TERM::MOUSE_BUT_UP + 0x20U;
-				buf[MSG_SZ+IDX_BUT]= 0x03U + 0x20U; // pair
-				msg_len= 2*MSG_SZ;
+				buf[IDX_BUT]=0x00U + TERM::MOUSE_BUT_UP + 0x21U;
+				buf[MSG_SZ+IDX_BUT]= 0x03U + 0x20U;
+				msg_len= 2*MSG_SZ; // pair
 			} 
 			break;
 	case TERM::MOUSE_BUT_2:	
 			if(evt_state){ 
-				buf[IDX_BUT]=0x01U + 0x20U; 
-				buf[MSG_SZ+IDX_BUT]= 0; // no pair
+				buf[IDX_BUT]=0x01U + 0x21U; 
+				buf[MSG_SZ+IDX_BUT]= 0x01U + 0x20U;
+				msg_len= 2*MSG_SZ; // pair
 			}else { 
-				buf[IDX_BUT]=0x01U + TERM::MOUSE_BUT_UP + 0x20U;
-				buf[MSG_SZ+IDX_BUT]= 0x03U + 0x20U; // pair
+				buf[IDX_BUT]=0x01U + TERM::MOUSE_BUT_UP + 0x21U;
+				buf[MSG_SZ+IDX_BUT]= 0x03U + 0x20U;
 				msg_len= 2*MSG_SZ; // pair
 			} 
 			break;
 		//evt_state value is pressed button number to drag
 	case TERM::MOUSE_MOVE:	
 			{ 
-			buf[IDX_BUT]= evt_state  + TERM::MOUSE_MOVE + 0x20U; 
-			buf[MSG_SZ]= 0; // no pair
+			buf[IDX_BUT]= evt_state + TERM::MOUSE_MOVE + 0x21U; 
+			buf[MSG_SZ+IDX_BUT]= evt_state + TERM::MOUSE_MOVE + 0x20U;
+			msg_len= 2*MSG_SZ; // pair
 			}
 			break;
 		//evt_state sign is rotation direction (0x60, 0x61 for xterm)
 	case TERM::MOUSE_WHEEL: 
-		buf[IDX_BUT]= ((evt_state >= 0)? 0x00U: 0x01U) + TERM::MOUSE_WHEEL + 0x20U; 
-		buf[MSG_SZ]= 0; // no pair
+		buf[IDX_BUT]= ((evt_state >= 0)? 0x00U: 0x01U) + TERM::MOUSE_WHEEL + 0x21U; 
+		buf[MSG_SZ+IDX_BUT]= ((evt_state >= 0)? 0x00U: 0x01U) + TERM::MOUSE_WHEEL + 0x20U; 
+		msg_len= 2*MSG_SZ; // pair
 		break;
 	default: return;
 	}
@@ -1016,7 +1083,13 @@ void term_send_mouse_event(TERM *pt, unsigned evt, int evt_state, unsigned x, un
 	//else write all msg
 	if( pt->bOptMouseXterm && msg_len > MSG_SZ ){
 		p=  buf+MSG_SZ;
-		msg_len= MSG_SZ;
+	}
+	//short msg format \e[Mbxy
+	msg_len= MSG_SZ;
+
+	//mouse mode_4 format \e[Mb
+	if( pt->mouse_mode == TERM::MOUSE_MODE_4 ){
+		msg_len= IDX_BUT+1;
 	}
 
 	term_Send(pt, p, msg_len);
@@ -1301,10 +1374,11 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 		unsigned line;				//line in memory buf
 
 		//max number of parameters of %d;%d format
-		enum { MAX_D_PRAMS= 10 };
-		unsigned d_param[MAX_D_PRAMS]= {};			//parameter value
+		enum { MAX_D_PARAMS= 10 };
+		//parameters of %d;%d format
+		unsigned d_param[MAX_D_PARAMS]= {};			//parameter value
 		//unsigned d_found;							//number of found params
-		BOOL	 is_d_explicit[MAX_D_PRAMS]= {};	//TRUE if parameter was set explicitly
+		BOOL	 is_d_explicit[MAX_D_PARAMS]= {};	//TRUE if parameter was set explicitly
 		//BOOL	 is_unsupported= FALSE;				//unsupported seq
 		BOOL	 is_prefixed= FALSE;				//\e[<prefix> form
 
@@ -1410,7 +1484,7 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 			//count d_found if exist in range [idx, pt->escape_filled - 1)
 			for( unsigned d_found=0; idx < pt->escape_filled - 1; ++idx )
 			{
-				if(d_found >= MAX_D_PRAMS)break;
+				if(d_found >= MAX_D_PARAMS)break;
 				//digit or ';' delimiter, for both case set 'is_d_explicit'
 				is_d_explicit[d_found] = TRUE;
 				
@@ -1452,7 +1526,7 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 			switch(pt->escape_wcode[idx]){
 				case 0:		//seq incomplete, wait next chars in pt->bEscape mode
 					continue;
-				case L'K':	//clear EOL
+				case L'K':	//clear EOL, clear lines
 					if( pt->cursor_x < pt->lx && pt->cursor_y < pt->ly ){
 						line = pt->do_line_index( pt->line_head, pt->cursor_y );
 						switch( d_param[0] ){
@@ -1461,6 +1535,13 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 							break;
 						case 2: //both
 							clear_in_line(pt, line, 0, pt->lx, pt->clr_attr, pt->lx);
+							//clear lines
+							{unsigned n= d_param[1]; 
+							if( n >= 2 && pt->cursor_y + 1 < pt->ly ){ 
+								--n;
+								if( n >= pt->ly - pt->cursor_y - 1 )n = pt->ly - pt->cursor_y - 1; 
+								if( n )term_clear_lines(pt, pt->cursor_y + 1, n, pt->clr_attr);
+							}}
 							break;
 						default: //0 or else to right
 							clear_in_line(pt, line, pt->cursor_x, (pt->lx - pt->cursor_x), pt->clr_attr, pt->lx);
@@ -1495,6 +1576,20 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 					{ unsigned lx= (d_param[0]? d_param[0]: 1); 
 					unsigned line= pt->do_line_index( pt->line_head, pt->cursor_y );
 					clear_in_line(pt, line, pt->cursor_x, lx, pt->clr_attr, pt->lx); }
+					pt->bEscape = FALSE;
+					return wsz;
+
+				case L'u':	//set attrs in line
+					{ unsigned lx= (d_param[0]? d_param[0]: 1); 
+					unsigned action= (d_param[1]>=3? 3: d_param[1]);
+					unsigned line= pt->do_line_index( pt->line_head, pt->cursor_y );
+					set_attr_in_line(pt, line, pt->cursor_x, lx, action, pt->clr_attr, pt->lx); }
+					pt->bEscape = FALSE;
+					return wsz;
+				case L'U':	//set attrs for lines
+					{unsigned n= (d_param[0]? d_param[0]: 1);
+					unsigned action= (d_param[1]>=3? 3: d_param[1]);
+					term_set_attr_lines(pt, pt->cursor_y, n, action, pt->clr_attr); }
 					pt->bEscape = FALSE;
 					return wsz;
 
@@ -1666,6 +1761,10 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 						pt->mouse_mode = TERM::MOUSE_MODE_3;
 						term_title_header(pt);
 						return wsz;
+					case 104:						//:M4:
+						pt->mouse_mode = TERM::MOUSE_MODE_4;
+						term_title_header(pt);
+						return wsz;
 					}
 					//wrong mode, stop seq
 					break;
@@ -1683,7 +1782,7 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 					if( !is_d_explicit[0] ){
 						pt->clr_attr= TERM::DEF_CLR_ATTR;
 					}else 
-					for( unsigned i=0; is_d_explicit[i] && (i < MAX_D_PRAMS); ++i){
+					for( unsigned i=0; is_d_explicit[i] && (i < MAX_D_PARAMS); ++i){
 						switch(d_param[i]){
 						case 0: pt->clr_attr= TERM::DEF_CLR_ATTR; break;																		//reset
 						case 1:	pt->clr_attr= TERM::DEF_CLR_ATTR | 0x008U; break;																//fg bright
@@ -1696,18 +1795,18 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 						case 39: pt->clr_attr= (pt->clr_attr & 0x0F0U) | ( TERM::DEF_CLR_ATTR & 0x00FU); break;									//default fg
 						case 49: pt->clr_attr= (pt->clr_attr & 0x00FU) | ( TERM::DEF_CLR_ATTR & 0x0F0U); break;									//default bg
 						case 38:																												//fg by index
-							if( i + 1 < MAX_D_PRAMS ){ ++i; if( d_param[i] == 5 ){
-							if( i + 1 < MAX_D_PRAMS) { ++i; pt->clr_attr= (pt->clr_attr & 0x0F0U) | (d_param[i] & 0x00FU); }}
+							if( i + 1 < MAX_D_PARAMS ){ ++i; if( d_param[i] == 5 ){
+							if( i + 1 < MAX_D_PARAMS ){ ++i; pt->clr_attr= (pt->clr_attr & 0x0F0U) | (d_param[i] & 0x00FU); }}
 							}break;
 						case 48:																												//bg by index
-							if( i + 1 < MAX_D_PRAMS ){ ++i; if( d_param[i] == 5 ){
-							if( i + 1 < MAX_D_PRAMS) { ++i; pt->clr_attr= (pt->clr_attr & 0x00FU) | ((d_param[i] << 4) & 0x0F0U); }}
+							if( i + 1 < MAX_D_PARAMS ){ ++i; if( d_param[i] == 5 ){
+							if( i + 1 < MAX_D_PARAMS ){ ++i; pt->clr_attr= (pt->clr_attr & 0x00FU) | ((d_param[i] << 4) & 0x0F0U); }}
 							}break;
 						default:
-							if( d_param[i] >= 30  && d_param[i] <= 37) { pt->clr_attr= (pt->clr_attr & 0x0F0U) | (d_param[i] - 30); break; }
-							if( d_param[i] >= 90  && d_param[i] <= 97) { pt->clr_attr= (pt->clr_attr & 0x0F0U) | (d_param[i] - 90 + 0x08U); break; }
-							if( d_param[i] >= 40  && d_param[i] <= 47) { pt->clr_attr= (pt->clr_attr & 0x00FU) | ((d_param[i] - 40) << 4); break; }
-							if( d_param[i] >= 100 && d_param[i] <= 107){ pt->clr_attr= (pt->clr_attr & 0x00FU) | ((d_param[i] - 100 + 0x80U) << 4); break; }
+							if( d_param[i] >= 30  && d_param[i] <= 37  ){ pt->clr_attr= (pt->clr_attr & 0x0F0U) | (d_param[i] - 30); break; }
+							if( d_param[i] >= 90  && d_param[i] <= 97  ){ pt->clr_attr= (pt->clr_attr & 0x0F0U) | (d_param[i] - 90 + 0x08U); break; }
+							if( d_param[i] >= 40  && d_param[i] <= 47  ){ pt->clr_attr= (pt->clr_attr & 0x00FU) | ((d_param[i] - 40) << 4); break; }
+							if( d_param[i] >= 100 && d_param[i] <= 107 ){ pt->clr_attr= (pt->clr_attr & 0x00FU) | ((d_param[i] - 100 + 0x80U) << 4); break; }
 							pt->clr_attr= TERM::DEF_CLR_ATTR;
 						}
 					}

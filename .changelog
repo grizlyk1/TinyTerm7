@@ -23,7 +23,7 @@
 	TinyTerm7.keymap is autoloaded the same as TinyTerm7.cfg
 
 .	
-
+130526
 	fix 'term_insert_lines' fail due to active_window added ( win_y+ly was used instead of win_ly )
 	
 	fix 'LowLevelKeyboardProc' hooked all desktop ( lack if( bFocus) check )
@@ -36,4 +36,42 @@
 		//if( fscanf(fi, "%*1[ ]%?c", len, buf ) != 1 ) 
 
 .
-<<< upper this mark is posted to git
+180526
+	better separated WM_MOUSEMOVE app/term conditions
+
+	changes mouse button up msg always short (only one '\e[Mbxy' msg posted on up event) in any mode,
+	so xterm and no_xterm modes will be yet less compatible (reason - real xterm clients anyway can not 
+	deal with unknown '\e[Mbxy' msgs)
+
+	add new mouse mode 4 to simplify orig minix 3 commands to 'map mouse to keys'
+	in mode 4 
+		mouse return only buttons up events without trailing <xy> data 
+		for buttons while ctrl key pressed user confirm the app is ready to accept mouse button events
+		for wheel ctrl works in reverse way, press ctrl to link mouse to TT7
+
+	changes to minix 3 to mouse M4 mode support 
+		'commands/yap/keys.c' pager and man pager
+		add to 'char defaultmap[]'
+		'bss=^[[Ma:fss=^[[Mb:qui=^[[M2:qui=^X'
+		any custom page size can be set by typing number of lines before wheel scroll
+
+		'commands/evi' editor
+		add to 'etc/.evirc' 
+		'map ^[[Ma visual ^U'
+		'map ^[[Mb visual ^D'
+		'map ^[[M2 visual :q!^M'
+		any custom page size can be set by typing number of lines before wheel scroll
+
+	add new termcap string 'set color attibutes in line' (remote selection support)
+#	num of chars; action
+#	action: 0 - reverse exising char attr, 1 - use exising bg attr | fg TERM::clr_attr, 
+#			2 - use exising fg attr | bg TERM::clr_attr, 3 - use TERM::clr_attr
+	':TC=\E[%d;%du:'
+
+	add new termcap string 'set lines color attibutes' (remote selection support)
+	':TL=\E[%d;%dU:'
+
+	add new termcap string 'clear %d lines below from cursor_y' (:ce: extention)
+	':EL=\E[2;%dK:'
+
+.

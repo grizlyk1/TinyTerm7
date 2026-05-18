@@ -5,7 +5,7 @@ mx1|new mx minix 3 console:\
 #	can autowrap without :xn:, can program tabstop, can insert mode, can bs
 #		:am:pt:mi:bs:\
 #(* name) bool can set 16 ANSI color/bk_color as extended xterm
-#	\E[(30-37,39,40-47,49,90-97,100-107)
+#	\E[(30-37,39,40-47,49,90-97,100-107) m
 		:Ac:\
 #	num of colors :Co: in setaf/setab
 		:co#80:li#25:it#8:Co#16:\
@@ -16,14 +16,26 @@ mx1|new mx minix 3 console:\
 		:mb=\E[5m:md=\E[1m:mr=\E[7m:me=\E[m:\
 #	(* func) cl=\E[H\E[J
 		:ce=\E[K:cd=\E[J:cl=\E[4J:\
+#	(* name, code) clear %d lines below from cursor_y
+		:EL=\E[2;%dK:\
 		:sr=\EM:SR=\E[%dT:\
 		:sf=\n:SF=\E[%dS:\
 		:al=\E[L:AL=\E[%dL:\
 		:dl=\E[M:DL=\E[%dM:\
+#	(* name, code) set color attibutes for lines 
+#	num of chars; action, action the same as :TC:
+		:TL=\E[%d;%dU:\
+#
 		:ic=\E[@:IC=\E[%d@:\
 		:dc=\E[P:DC=\E[%dP:\
 #	clear in line
 		:ec=\E[X:EC=\E[%dX:\
+#	(* name, code) set color attibutes in line 
+#	num of chars; action
+#	action: 0 - reverse exising char attr, 1 - use exising bg attr | fg TERM::clr_attr, 
+#			2 - use exising fg attr | bg TERM::clr_attr, 3 - use TERM::clr_attr
+		:TC=\E[%d;%du:\
+#
 		:cm=\E[%i%d;%dH:\
 		:ho=\E[H:\
 		:le=\E[D:LE=\E[%dD:\
@@ -57,6 +69,8 @@ mx1|new mx minix 3 console:\
 		:M2=\E[102n:\
 #	smm3 +any_move
 		:M3=\E[103n:\
+#	smm4 only buttons and wheel, answer \e[Mb
+		:M4=\E[104n:\
 #	:Km: kmous, mouse event prefix to answer \e[Mbxy, "button,x,y" in form "number = %c-0x20"
 		:Km=\E[M:\
 #ANSI 8 dark + 8 bright colors, set by number 0-15 (setaf,setab)
@@ -71,6 +85,8 @@ mx1|new mx minix 3 console:\
 		:sD=\E[47h:rD=\E[47l:\
 #	:ti:/:te: smcup/rmcup alternate screen mode, can be partially implemented as :sD:/:rD:
 #	but it is not the same
+#		probably :ti:/:te: is not avalid name for termcap alt screen mode,
+#		can comment out :ti:/:te: and use only :sD:/:rD:
 		:ti=\E[47h:te=\E[47l:\
 #(* code)	set active window %d;%d;%d;%d (top, bottom, left, right) :wi: win,
 #	on success cursor x,y will be set to 0,0 corner of new active window

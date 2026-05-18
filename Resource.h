@@ -33,7 +33,8 @@
 #define IDM_M1							111
 #define IDM_M2							112
 #define IDM_M3							113
-#define IDM_MICE_XTERM					114
+#define IDM_M4							114
+#define IDM_MICE_XTERM					115
 #define IDM_MIDDLE                      120
 #define IDM_PRIOR                       121
 #define IDM_NEXT                        122

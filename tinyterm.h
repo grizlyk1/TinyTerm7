@@ -185,16 +185,25 @@ struct TERM {
 			0x20	mouse move, hold button index or index 3
 			0x40	mouse wheel, wheel direction index 0 or 1
 
+		to avoid spaces in keymaps button char started from 0x21, not 0x20 as xterm does
+
+		in mouse mode 4 
+			ctrl override acting inversed for buttons (hold ctrl to confirm app is ready to get mouse buttons event)
+			button down events is not posted to app, only button up events
+			ctrl for wheel remains ordinary (hold ctrl to link whell to TT7)
+
 		to be xterm compat
-			on event button DN mouse reported single: 0x00+but_idx
-			on event button UP mouse reported pair: 0x10+but_idx and 0x00+3
+			on event button DN mouse reported single event: 0x00+but_idx
+			on event button UP mouse reported single event: 0x03
+			drop posting event pairs because real xterm apps are not ready to deal with unknown \e[Mb events
 	*/
 	enum { MOUSE_BUT_MASK = 0x03 };
 	enum { MOUSE_BUT_1= 0, MOUSE_BUT_2= 1, MOUSE_BUT_3= 2, MOUSE_BUT_NO= 3 };
 	enum { MOUSE_BUT_HOLD= 0x00, MOUSE_BUT_UP= 0x10, MOUSE_MOVE= 0x20, MOUSE_WHEEL= 0x40 };
 
 	//tracking detail mode3 implies modes 1&2 etc
-	enum { MOUSE_DIS=0, MOUSE_MODE_1= 1, MOUSE_MODE_2= 2, MOUSE_MODE_3= 3 };
+	//MOUSE_MODE_4 reporting only buttons and wheel in form \e[M<b>
+	enum { MOUSE_DIS=0, MOUSE_MODE_1, MOUSE_MODE_2, MOUSE_MODE_3, MOUSE_MODE_4 };
 	unsigned	mouse_mode;
 	BOOL bAppMouse;				//if (!bAppMouse || !mouse_mode || ctrl_pressed), mouse event directed to terminal else to app
 
