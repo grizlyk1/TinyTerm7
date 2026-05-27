@@ -4,8 +4,8 @@ mx1|new mx minix 3 console:\
 #	or as always true in modern tty: bs 
 #	can autowrap without :xn:, can program tabstop, can insert mode, can bs
 #		:am:pt:mi:bs:\
-#(* name) bool can set 16 ANSI color/bk_color as extended xterm
-#	\E[(30-37,39,40-47,49,90-97,100-107) m
+#(* name) bool can set 16 ANSI color/bg_color as extended xterm
+#	\E[ (30-37,39,40-47,49,90-97,100-107) m
 		:Ac:\
 #	num of colors :Co: in setaf/setab
 		:co#80:li#25:it#8:Co#16:\
@@ -15,15 +15,15 @@ mx1|new mx minix 3 console:\
 		:us=\E[4m:ue=\E[m:\
 		:mb=\E[5m:md=\E[1m:mr=\E[7m:me=\E[m:\
 #	(* func) cl=\E[H\E[J
-		:ce=\E[K:cd=\E[J:cl=\E[4J:\
+		:cb=\E[1K:ce=\E[K:cd=\E[J:cl=\E[4J:\
 #	(* name, code) clear %d lines below from cursor_y
-		:EL=\E[2;%dK:\
+		:el=\E[2K:EL=\E[2;%dK:\
 		:sr=\EM:SR=\E[%dT:\
 		:sf=\n:SF=\E[%dS:\
 		:al=\E[L:AL=\E[%dL:\
 		:dl=\E[M:DL=\E[%dM:\
 #	(* name, code) set color attibutes for lines 
-#	num of chars; action, action the same as :TC:
+#	num of lines; action, action the same as :TC:
 		:TL=\E[%d;%dU:\
 #
 		:ic=\E[@:IC=\E[%d@:\
@@ -37,6 +37,11 @@ mx1|new mx minix 3 console:\
 		:TC=\E[%d;%du:\
 #
 		:cm=\E[%i%d;%dH:\
+#		cursor x (^M:RI:), cursor y
+		:ch=\E[;%i%dH:cv=\E[%i%d;H:\
+#		cursor last line, lead to errors when app and terminal has different ly settings
+#		it is better to always count ll by app
+		:ll=\EF:\
 		:ho=\E[H:\
 		:le=\E[D:LE=\E[%dD:\
 		:nd=\E[C:RI=\E[%dC:\
@@ -56,6 +61,11 @@ mx1|new mx minix 3 console:\
 		:im=\E[4h:ei=\E[4l:\
 #	smam/rmam
 		:SA=\E[7h:RA=\E[7l:\
+#	(* name) terminal mode "output char attributes instead of chars"
+#	to support app software implemented "insert/delete" terminal commands
+#	using local shadow copy of screen
+#	set mode :As: / reset mode :Ae:
+		:As=\E[5h:Ae=\E[5l:\
 #
 #(* name, code)
 #	XOFF2, more protected version of XOFF signal, discard all incoming keyboard/mouse data
@@ -85,7 +95,7 @@ mx1|new mx minix 3 console:\
 		:sD=\E[47h:rD=\E[47l:\
 #	:ti:/:te: smcup/rmcup alternate screen mode, can be partially implemented as :sD:/:rD:
 #	but it is not the same
-#		probably :ti:/:te: is not avalid name for termcap alt screen mode,
+#		probably :ti:/:te: is not a valid name for termcap alt screen mode,
 #		can comment out :ti:/:te: and use only :sD:/:rD:
 		:ti=\E[47h:te=\E[47l:\
 #(* code)	set active window %d;%d;%d;%d (top, bottom, left, right) :wi: win,
@@ -112,3 +122,4 @@ mx1|new mx minix 3 console:\
         :k5=\265:k6=\266:k7=\267:k8=\270:k9=\271:\
 #	F11, F12
         :F1=\272:F2=\273:\
+:

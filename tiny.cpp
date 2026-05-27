@@ -57,10 +57,11 @@ enum { TITLE_BUF_STATUS_SZ = 200 };
 WCHAR wndTitle[TITLE_BUF_SZ] = L"TinyTerm7";
 
 //RGB(32,96,240)
-const COLORREF COLORS[16+8] = {
+//fg colors could be different in RGB weight from background for the same idx
+static const COLORREF fg_COLORS[3*8] = {
 	//norm
 	RGB(0,0,0),			RGB(160,0,0),	RGB(0,160,0),	RGB(160,160,0),
-	RGB(30,30,160),		RGB(160,0,160),	RGB(0,160,160),	RGB(160,160,160),
+	RGB(40,40,160),		RGB(160,0,160),	RGB(0,160,160),	RGB(160,160,160),
 	//high(bold)
 	RGB(120,120,120), 	RGB(240,0,0),	RGB(0,240,0),	RGB(240,240,0), 
 	RGB(60,60,240),		RGB(240,0,240), RGB(0,240,240), RGB(240,240,240),
@@ -68,6 +69,18 @@ const COLORREF COLORS[16+8] = {
 	RGB(0,0,0),			RGB(120,0,0),	RGB(0,120,0),	RGB(120,120,0),
 	RGB(30,30,120),		RGB(120,0,120), RGB(0,120,120), RGB(120,120,120)
 };
+static const COLORREF bg_COLORS[3*8] = {
+	//norm
+	RGB(0,0,0),			RGB(120,0,0),	RGB(0,120,0),	RGB(120,120,0),
+	RGB(0,0,120),		RGB(120,0,120),	RGB(0,120,120),	RGB(140,140,140),
+	//high(bold)
+	RGB(90,90,90), 		RGB(240,0,0),	RGB(0,240,0),	RGB(240,240,0), 
+	RGB(0,0,240),		RGB(240,0,240), RGB(0,240,240), RGB(240,240,240),
+	//dim() 
+	RGB(0,0,0),			RGB(120,0,0),	RGB(0,120,0),	RGB(120,120,0),
+	RGB(30,30,120),		RGB(120,0,120), RGB(0,120,120), RGB(120,120,120)
+};
+
 static HINSTANCE hInst;
 static HBRUSH dwBkBrush;
 HWND hwndTerm;
@@ -467,12 +480,12 @@ void tiny_Paint(HDC hDC, RECT rcPaint)
 				&& (x >= sel_x1 && x <= sel_x2)
 				){
 				//selected text
-				SetTextColor(hDC, COLORS[(p_attr[x]>>4)&0x0f]);
-				SetBkColor(hDC, COLORS[(p_attr[x])&0x0f]);
+				SetTextColor(hDC, fg_COLORS[(p_attr[x]>>4)&0x0f]);
+				SetBkColor(hDC, bg_COLORS[(p_attr[x])&0x0f]);
 			}else{
 				//normal text
-				SetTextColor(hDC, COLORS[(p_attr[x])&0x0f]);
-				SetBkColor(hDC, COLORS[(p_attr[x]>>4)&0x0f]);
+				SetTextColor(hDC, fg_COLORS[(p_attr[x])&0x0f]);
+				SetBkColor(hDC, bg_COLORS[(p_attr[x]>>4)&0x0f]);
 			}
 
 			unsigned wlen = j-x;

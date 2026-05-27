@@ -25,6 +25,7 @@ void term_partial_Reset(TERM *pt)
 	pt->bInsert= FALSE;
 	pt->bWrap= TRUE;
 	pt->bKeyb= TRUE;
+	pt->bAttrib= FALSE;
 
 	pt->bAppMouse= TRUE;
 
@@ -591,14 +592,26 @@ void term_print_wchar(TERM *pt, TERM::tt7_data_t wch){
 	else print_in_line(pt, line, pt->cursor_x, 1, pt->clr_attr, pt->lx, wbuf);
 }
 
-//print printable char, do wrap and scroll if needed
-void term_tty_wchar(TERM *pt, TERM::tt7_data_t wch){
+//print char attribute
+void term_print_attr(TERM *pt, TERM::tt7_attr_t utf8_attr){
 	assert(pt);
 
-	//print char as printable
-	term_print_wchar(pt,wch);
+	//convert UTF8 to tt7_attr_t 
+	//( >> 2 for UTF8; >>4 for plain 8 bit char pair )
+	TERM::tt7_attr_t attr= pt->mk_utf8_attr(utf8_attr);
 
-	//next cursor pos
+	unsigned line = pt->do_line_index(pt->line_head, pt->cursor_y);
+	//unsigned lx = (pt->bWrap? pt->lx: TERM::MAX_LX);
+
+	//action == 3 //use attr
+	enum { ACTION= 3 };
+	set_attr_in_line(pt, line, pt->cursor_x, 1, ACTION, attr, pt->lx);
+}
+
+//next tty cursor pos
+void term_tty_cursor(TERM *pt){
+	assert(pt);
+
 	//rmam
 	if( !pt->bWrap ){ 
 		if( pt->cursor_x + 1 < pt->max_lx() ) ++pt->cursor_x;
@@ -610,6 +623,28 @@ void term_tty_wchar(TERM *pt, TERM::tt7_data_t wch){
 			if( pt->cursor_y + 1 < pt->ly ) ++pt->cursor_y;
 			else term_scroll_forward1(pt);
 	}}
+}
+
+//print printable char, do wrap and scroll if needed
+void term_tty_wchar(TERM *pt, TERM::tt7_data_t wch){
+	assert(pt);
+
+	//print char as printable
+	term_print_wchar(pt,wch);
+
+	//next tty cursor pos
+	term_tty_cursor(pt);
+}
+
+//print char attribute, do wrap and scroll if needed
+void term_tty_attr(TERM *pt, TERM::tt7_attr_t attr){
+	assert(pt);
+
+	//print char attribute
+	term_print_attr(pt,attr);
+
+	//next tty cursor pos
+	term_tty_cursor(pt);
 }
 
 void term_save_display(TERM *pt)
@@ -781,9 +816,9 @@ void term_Parse(TERM *pt, const char *buf, unsigned len)
 	enum { WBUF_SZ_RESERVED = 16 };
 	WCHAR	*wbuf= static_cast<WCHAR*>(_alloca( (wsz + WBUF_SZ_RESERVED)*sizeof(WCHAR) )); 
 
-	//option, display as UTF8
+	//option, display as UTF8 or :As: mode
 	//if( pt->bOptDisplayUTF8 )
-	if( pt->OptDisplay_mode == TERM::Display_UTF8 )
+	if( pt->OptDisplay_mode == TERM::Display_UTF8 || pt->bAttrib )
 	{
 		unsigned wlen = pre_parse_utf8(pt, (const unsigned char *)buf, len, wbuf );
 		if(wlen)term_ParseW(pt, wbuf, wlen);
@@ -835,7 +870,7 @@ void term_ParseW(TERM *pt, const WCHAR *wbuf, unsigned wlen)
 			pt->bAppTitle= FALSE;
 			pt->title[pt->title_idx] = 0; //ensure
 			term_title_header(pt);
-			//is_tiny_NC_Redraw= TRUE;
+			//request_tiny_NC_redraw();
 			continue;
 		}
 
@@ -898,6 +933,13 @@ void term_ParseW(TERM *pt, const WCHAR *wbuf, unsigned wlen)
 			break;
 		default:
 		default_next_tty:
+			//continue Attrib mode
+			if (pt->bAttrib){
+				//write next attribute
+				term_tty_attr(pt, static_cast<TERM::tt7_attr_t>(wc & 0xFFFFUL) );
+				continue;
+			}
+
 			//consolas font does not contain glyphs for all codes in range 0-127
 			//map 0-31 to 0xa0-0xbF, the mapping done in paint, but memory contain real data whithout mapping
 			term_tty_wchar(pt, static_cast<TERM::tt7_data_t>(wc & 0xFFFFUL) );
@@ -909,8 +951,8 @@ void term_ParseW(TERM *pt, const WCHAR *wbuf, unsigned wlen)
 	request_tiny_redraw(NEW_PAINT_RECT);
 }
 
-//print term title header: "TT7------: "
-static WCHAR *title_base_tpl= L"TT7%c%c%c%c%c%c: ";
+//print term title header: "TT7-------: "
+static WCHAR *title_base_tpl= L"TT7%c%c%c%c%c%c%c: ";
 void term_title_header(TERM *pt)
 {
 	assert(pt);
@@ -920,6 +962,7 @@ void term_title_header(TERM *pt)
 		(pt->mouse_mode? 	L'm':L'-'),
 		(pt->bWrap? 		L'-':L'u'),
 		(pt->bInsert? 		L'i':L'-'),
+		(pt->bAttrib? 		L'b':L'-'),
 		(pt->is_active_window()? 	
 							L'a':L'-'),
 		(pt->bAppTitle? 	L'T':L'-')
@@ -1030,7 +1073,7 @@ void term_send_mouse_event(TERM *pt, unsigned evt, int evt_state, unsigned x, un
 	enum { IDX_BUT=3, IDX_X, IDX_Y, MSG_SZ };
 	char buf[MSG_SZ*2+1]= { 
 		//TT7-compatible single, buf[0] to send len=MSG_SZ
-		27, '[', 'M', 0x24U, x + 0x21U, y + 0x21U, 
+		27, '[', 'M', 0x20U, x + 0x21U, y + 0x21U, 
 		//xterm-compatible single, buf[MSG_SZ] to send len=MSG_SZ
 		27, '[', 'M', 0x23U, x + 0x21U, y + 0x21U, 0 };
 	unsigned msg_len= MSG_SZ;
@@ -1039,22 +1082,22 @@ void term_send_mouse_event(TERM *pt, unsigned evt, int evt_state, unsigned x, un
 		//evt_state value 1 if pressed; 
 	case TERM::MOUSE_BUT_1:	
 			if(evt_state){ 
-				buf[IDX_BUT]=0x00U + 0x21U; 
+				buf[IDX_BUT]=0x01U + 0x21U; 
 				buf[MSG_SZ+IDX_BUT]= 0x00U + 0x20U;
 				msg_len= 2*MSG_SZ; // pair
 			}else { 
-				buf[IDX_BUT]=0x00U + TERM::MOUSE_BUT_UP + 0x21U;
+				buf[IDX_BUT]=0x01U + TERM::MOUSE_BUT_UP + 0x21U;
 				buf[MSG_SZ+IDX_BUT]= 0x03U + 0x20U;
 				msg_len= 2*MSG_SZ; // pair
 			} 
 			break;
 	case TERM::MOUSE_BUT_2:	
 			if(evt_state){ 
-				buf[IDX_BUT]=0x01U + 0x21U; 
+				buf[IDX_BUT]=0x02U + 0x21U; 
 				buf[MSG_SZ+IDX_BUT]= 0x01U + 0x20U;
 				msg_len= 2*MSG_SZ; // pair
 			}else { 
-				buf[IDX_BUT]=0x01U + TERM::MOUSE_BUT_UP + 0x21U;
+				buf[IDX_BUT]=0x02U + TERM::MOUSE_BUT_UP + 0x21U;
 				buf[MSG_SZ+IDX_BUT]= 0x03U + 0x20U;
 				msg_len= 2*MSG_SZ; // pair
 			} 
@@ -1678,6 +1721,10 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 						pt->bInsert = TRUE;
 						term_title_header(pt);
 						return wsz;
+					case 5:                         //:As:
+						pt->bAttrib = TRUE;			
+						term_title_header(pt);
+						return wsz;
 					case 7:                         //smam :SA:
 						pt->bWrap = TRUE;			
 						term_title_header(pt);
@@ -1694,6 +1741,10 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 					switch(d_param[0]){
 					case 4:							//rmir :ei:
 						pt->bInsert = FALSE;
+						term_title_header(pt);
+						return wsz;
+					case 5:                         //:Ae:
+						pt->bAttrib = FALSE;			
 						term_title_header(pt);
 						return wsz;
 					case 7:                         //rmam :RA:
@@ -1716,7 +1767,7 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 					case 6:{						//:u7: request cursor pos, answer is :u6=\E[y;xR:
 						enum { WBUF_SZ= 32 };
 						WCHAR  wbuf[WBUF_SZ+2]; wbuf[WBUF_SZ]= 0;
-						int wlen = _snwprintf(wbuf, WBUF_SZ, L"\033[%u;%uR", pt->cursor_y, pt->cursor_x);
+						int wlen = _snwprintf(wbuf, WBUF_SZ, L"\033[%u;%uR", pt->cursor_y + 1, pt->cursor_x + 1);
 						if(wlen > 0)term_SendW(pt,wbuf,wlen); 
 						}return wsz;
 					case 7:							//:sc: save cursor
@@ -1832,6 +1883,11 @@ const WCHAR *parse_EscapeW(TERM *pt, const WCHAR *wsz, unsigned wcnt)
 			return wsz;
 		case L'H':	//:st: hts, set all tabstops gap by current cursor_x
 			if(pt->bProgTab){ pt->tab_sz = pt->eval_tab_sz(); }
+			pt->bEscape = FALSE;
+			return wsz;
+		case L'F':	//:ll: cursor last line
+			pt->cursor_y = pt->ly - 1;
+			pt->cursor_x = 0;
 			pt->bEscape = FALSE;
 			return wsz;
 			

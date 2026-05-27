@@ -163,6 +163,18 @@ struct TERM {
 	BOOL bInsert;				//smir/rmir "insert mode"
 	BOOL bWrap;					//smam/rmam "auto wrap line mode"
 
+    /* 
+    write to terminal char attributes instead of chars itself 
+    UTF8 encoding is used to represent bg and fg colors values
+    for 16 color modes, 16 bit attribute WCHAR value encoded to UFT8
+    	0x80+[0x00-0x0F] is byte byte fg color idx
+    	0xD0+[0x00-0x0F] is high byte bg color idx
+    	0xD<bg:4>0x8<fg:4>
+    */
+	BOOL bAttrib;				//:As:/:Ae: "attributes output mode"
+	//make attr from utf8 16 bit value: ((utf8_wch>>2) & 0x0F0U) | (utf8_wch & 0x0FU)
+	tt7_attr_t mk_utf8_attr( tt7_attr_t utf8_wattr )const { return ((utf8_wattr>>2) & 0x0F0U) | (utf8_wattr & 0x0FU); }
+
 	/*
 	keyb can be locked by error data output
 	so could be done automatic set XON by timer, 1 second delay for example, 
@@ -173,32 +185,34 @@ struct TERM {
 	/*
 		TT7 do not keep pressed state of buttons, every event is only single button pressed/unpressed
 		app can track pressed state of buttons itself
+		in general changes the less mouse is xterm compatible the better is result
 
-		mouse event reported about index of own pressed button 0,1,2 or index 3 if no buttons pressed
+		mouse event reported about index of own pressed button 1,2,3 or index 0 if no buttons pressed
+			(xterm button indexes 0,1,2 or index 3 if no buttons pressed)
 		mouse event reported about index of button in low bits
 		MOUSE_BUTTON_MASK defines used number of mouse buttons (2 buttons for 0x03 mask)
 
 		mouse event reported about mutual exclusive event type in high bits
 			hi		low
-			0x00	event button HOLD index, can be with index 3 (xterm button HOLD index)
-			0x10	event button UP index, can not be with index 3 (incompatible with xterm)
-			0x20	mouse move, hold button index or index 3
+			0x00	event button HOLD index, can be with index 0 (xterm button HOLD index is 3)
+			0x10	event button UP index, can not be with index 0 (always incompatible with xterm)
+			0x20	mouse move, hold button index or index 0 (xterm button HOLD index is 3)
 			0x40	mouse wheel, wheel direction index 0 or 1
 
-		to avoid spaces in keymaps button char started from 0x21, not 0x20 as xterm does
+		to avoid spaces in keymaps, button char started from 0x21, not 0x20 as xterm does
 
 		in mouse mode 4 
+			mode 4 intended to map mouse events in old minix console app as keyboard key pressed
 			ctrl override acting inversed for buttons (hold ctrl to confirm app is ready to get mouse buttons event)
 			button down events is not posted to app, only button up events
-			ctrl for wheel remains ordinary (hold ctrl to link whell to TT7)
+			ctrl for wheel remains ordinary (hold ctrl to link wheel to terminal)
 
-		to be xterm compat
-			on event button DN mouse reported single event: 0x00+but_idx
-			on event button UP mouse reported single event: 0x03
+		event pairs to be xterm compat
 			drop posting event pairs because real xterm apps are not ready to deal with unknown \e[Mb events
+			on event button UP/DN mouse reported single \e[Mb event
 	*/
 	enum { MOUSE_BUT_MASK = 0x03 };
-	enum { MOUSE_BUT_1= 0, MOUSE_BUT_2= 1, MOUSE_BUT_3= 2, MOUSE_BUT_NO= 3 };
+	enum { MOUSE_BUT_NO= 0, MOUSE_BUT_1, MOUSE_BUT_2, MOUSE_BUT_3 };
 	enum { MOUSE_BUT_HOLD= 0x00, MOUSE_BUT_UP= 0x10, MOUSE_MOVE= 0x20, MOUSE_WHEEL= 0x40 };
 
 	//tracking detail mode3 implies modes 1&2 etc
@@ -207,6 +221,7 @@ struct TERM {
 	unsigned	mouse_mode;
 	BOOL bAppMouse;				//if (!bAppMouse || !mouse_mode || ctrl_pressed), mouse event directed to terminal else to app
 
+	//the mouse events used by terminal iself (to popup context menu, to copy&paste etc)
 	enum mouseEvents {DOUBLECLK, RIGHTCLK, LEFTDOWN, LEFTDRAG, LEFTUP, MIDDLEUP};
 
 	//options 

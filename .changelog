@@ -75,3 +75,38 @@
 	':EL=\E[2;%dK:'
 
 .
+270526
+
+	fix :u6: %i - add +1 to cursor_x,y
+		int wlen = _snwprintf(wbuf, WBUF_SZ, L"\033[%u;%uR", pt->cursor_y + 1, pt->cursor_x + 1); 
+
+	change less xterm compatible but more robust mouse button bits
+
+		'commands/yap/keys.c' pager and man pager
+		change to 'char defaultmap[]'
+		'qui=^[[M3'
+
+		'commands/evi' editor
+		change to 'etc/.evirc' 
+		'map ^[[M3 visual :q!^M'
+
+	terminal mode "output char attributes instead of chars"
+	to support app software implemented "insert/delete" terminal commands 
+	using local shadow copy of screen
+		# set mode
+		':As=\E[5h:'
+		# reset mode
+		':Ae=\E[5l:'
+	new TT7 caption mode indicator "b" ("TT7kmuibaT")
+
+	app sofware can not do semantic analyze of patterns like :cm: 
+	and needs explicitly added commands to move only along X or Y
+	even if the commands are obvious partical :cm: pattern
+	otherwise the terminal commands will be software emulated by app
+		add	to mx1.cap
+		:cb:el:ch:cv:ll:
+
+	add separated fg_COLORS/bg_COLORS RGB fields for the same color idx
+	to allow color correction when thin fg color lines agains wide bg color area
+
+.

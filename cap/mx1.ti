@@ -15,15 +15,15 @@ mx1|new mx1 minix 3 console,
 		smul=\E[4m, rmul=\E[m,
 		blink=\E[5m, bold=\E[1m, rev=\E[7m, sgr0=\E[m,
 #	(* func) cl=\E[H\E[J
-		el=\E[K, ed=\E[J, clear=\E[4J,
+		cb=\E[1K, el=\E[K, ed=\E[J, clear=\E[4J,
 #	(* name, code) :EL:
-		els=\E[2;%p1%dK,
+		el1=\E[2K, els=\E[2;%p1%dK,
 		ri=\EM, rin=\E[%p1%dT,
 		ind=\n, indn=\E[%p1%dS,
 		il1=\E[L, il=\E[%p1%dL,
 		dl1=\E[M, dl=\E[%p1%dM,
 #	(* name, code) set color attibutes for lines :TL:
-#	num of chars; action, action the same as :TC:
+#	num of lines; action, action the same as :TC:
 		atrl=\E[%p1%d;%p2%dU,
 #
 		ich1=\E[@, ich=\E[%p1%d@,
@@ -37,6 +37,11 @@ mx1|new mx1 minix 3 console,
 		atrch=\E[%p1%d;%p2%du,
 #
 		cup=\E[%i%p1%d;%p2%dH,
+#		cursor x (^M:RI:), cursor y
+		hpa=\E[;%i%p1%dH, vpa=\E[%i%p1%d;H,
+#		cursor last line, lead to errors when app and terminal has different ly settings
+#		it is better to always count ll by app
+		ll=\EF,
 		home=\E[H,
 		cub1=\E[D, cub=\E[%p1%dD,
 		cuf1=\E[C, cuf=\E[%p1%dC,
@@ -56,6 +61,11 @@ mx1|new mx1 minix 3 console,
 		smir=\E[4h, rmir=\E[4l,
 #	smam/rmam
 		smam=\E[7h, rmam=\E[7l,
+#	(* name) terminal mode "output char attributes instead of chars"
+#	to support app software implemented "insert/delete" terminal commands 
+#	using local shadow copy of screen
+#	set mode :As: / reset mode :Ae:
+		As=\E[5h, Ae=\E[5l,
 #
 #(* name, code)
 #	XOFF2, more protected version of XOFF signal, discard all incoming keyboard/mouse data
