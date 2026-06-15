@@ -59,4 +59,8 @@ based on source code of "tinyTerm"
 	any other remote protocols can be used by external tools running in cygwin environment
 	connected to the PTY device (the tools are called from bash prompt, like "telnet")
 
+4. external repos
+   because of "github 2fa protection" i probably will not be able to access own data on github since june 2026, 
+   check sourceforge.net or similar open stograge for the same project name TinyTerm7 for possible project updates.
+   
 ===
