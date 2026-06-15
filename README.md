@@ -60,7 +60,8 @@ based on source code of "tinyTerm"
 	connected to the PTY device (the tools are called from bash prompt, like "telnet")
 
 4. external repos
+   
    because of "github 2fa protection" i probably will not be able to access own data on github since june 2026, 
-   check sourceforge.net or similar open stograge for the same project name TinyTerm7 for possible project updates.
+   check sourceforge.net or similar open storage for the same project name TinyTerm7 for possible project updates.
    
 ===
